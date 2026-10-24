@@ -295,11 +295,13 @@ export class WagerTransactionService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
+      // In the SQS path, commit the inbox receipt with financial state and outbox events; HTTP has no inbox receipt.
       const result = await this.orm.em.transactional(async (em) => {
         const lockKey = JSON.stringify([
           request.providerId,
           request.idempotencyKey,
         ]);
+        // Serialize each provider/key pair before lookup to prevent concurrent duplicate effects.
         const [attempt] = await (em as SqlEntityManager).execute<
           { locked: boolean }[]
         >('select pg_try_advisory_xact_lock(hashtextextended(?, 0)) as locked', [
@@ -454,7 +456,7 @@ export class WagerTransactionService implements OnModuleInit, OnModuleDestroy {
           );
         }
 
-        // SKIP LOCKED probe: empty means the row is locked elsewhere (or absent).
+        // Probe only for contention metrics; the following lock waits and reads the latest balance.
         const probe = await (em as SqlEntityManager).execute(
           'select id from wallets where id = ? for update skip locked',
           [request.walletId],

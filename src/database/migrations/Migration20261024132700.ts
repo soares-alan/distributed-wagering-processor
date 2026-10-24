@@ -118,6 +118,7 @@ export class Migration20261024132700 extends Migration {
         add column "updated_at" timestamptz not null default now(),
         add column "failed_at" timestamptz,
         add column "legacy_payload" jsonb;
+      -- Preserve the original payload while upgrading existing rows to the event envelope.
       update "outbox_events"
         set legacy_payload = payload,
             correlation_id = id::text,

@@ -64,6 +64,7 @@ export class Migration20261024132500 extends Migration {
       on "ledger_entries" ("wallet_id", "created_at");
     `);
     this.addSql(`
+      -- Ledger entries are audit history; corrections must be new compensating entries.
       create function "reject_ledger_mutation"() returns trigger
       language plpgsql as $$
       begin

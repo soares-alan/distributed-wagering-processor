@@ -75,6 +75,7 @@ export class OutboxSqsPublisher
 
   private async publishCycle(): Promise<void> {
     try {
+      // An interrupted publish can retry after the lease expires, unless the next sweep marks it failed at the attempt limit.
       const events = await this.claimPendingEvents();
       for (const event of events) {
         await this.publish(event);
